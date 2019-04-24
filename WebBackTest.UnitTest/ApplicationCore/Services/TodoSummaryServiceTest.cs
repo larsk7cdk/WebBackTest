@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Moq;
 using WebBackTest.web.ApplicationCore.Entities;
-using WebBackTest.web.Controllers;
-using WebBackTest.web.Infrastructure.Data;
-using WebBackTest.web.ViewModels.Todo;
+using WebBackTest.web.ApplicationCore.Services;
 using Xunit;
 
-namespace WebBackTest.UnitTest.Controllers
+namespace WebBackTest.UnitTest.ApplicationCore.Services
 {
-    public class ToDoControllerTest
+    public class TodoSummaryServiceTest
     {
         private readonly IReadOnlyList<Todo> _toDoTestDouble = new List<Todo>
         {
@@ -23,23 +17,33 @@ namespace WebBackTest.UnitTest.Controllers
             new Todo {Id = 5, Name = "ToDo 5", Description = "ToDo 5 description", CreatedDateTime = new DateTime(), IsDone = false},
             new Todo {Id = 6, Name = "ToDo 6", Description = "ToDo 6 description", CreatedDateTime = new DateTime(), IsDone = true}
         };
-
-
+        
         [Fact]
-        public async Task TodoController_Index_ReturnsAViewResult_WithAListOfTodos()
+        public void TodoSummaryService_ToDoOngoing_Schould_ReturnNoOfToDoOngoing()
         {
-            // Arrange
-            var mockRepo = new Mock<ITodoRepository>();
-            mockRepo.Setup(repo => repo.GetAllAsync()).ReturnsAsync(_toDoTestDouble);
-            var controller = new TodoController(mockRepo.Object);
+            // Arrange 
+            var sut = new TodoSummaryService();
+            const int expected = 4;
 
             // Act
-            var result = await controller.Index();
+            var actual = sut.ToDoOngoing(_toDoTestDouble);
 
             // Assert
-            var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<IEnumerable<TodoViewModel>>(viewResult.Model);
-            Assert.Equal(6, model.Count());
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TodoSummaryService_ToDoDone_Schould_ReturnNoOfToDoDone()
+        {
+            // Arrange 
+            var sut = new TodoSummaryService();
+            const int expected = 2;
+
+            // Act
+            var actual = sut.ToDoDone(_toDoTestDouble);
+
+            // Assert
+            Assert.Equal(expected, actual);
         }
     }
 }
