@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using Moq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Moq;
 using WebBackTest.web.ApplicationCore.Entities;
 using WebBackTest.web.Controllers;
 using WebBackTest.web.Infrastructure.Data;
@@ -26,7 +26,7 @@ namespace WebBackTest.UnitTest.Controllers
 
 
         [Fact]
-        public async Task TodoController_Index_ReturnsAViewResult_WithAListOfTodos()
+        public async Task TodoController_Index_Schould_ReturnsAViewResult_WithAListOfTodos()
         {
             // Arrange
             var mockRepo = new Mock<ITodoRepository>();
@@ -40,6 +40,47 @@ namespace WebBackTest.UnitTest.Controllers
             var viewResult = Assert.IsType<ViewResult>(result);
             var model = Assert.IsAssignableFrom<IEnumerable<TodoViewModel>>(viewResult.Model);
             Assert.Equal(6, model.Count());
+        }
+
+        [Fact]
+        public async Task TodoController_Create_Schould_ReturnsBadRequestResult_WhenModelStateIsInvalid()
+        {
+            // Arrange
+            var mockRepo = new Mock<ITodoRepository>();
+            mockRepo.Setup(repo => repo.GetAllAsync()).ReturnsAsync(_toDoTestDouble);
+            var controller = new TodoController(mockRepo.Object);
+            controller.ModelState.AddModelError("Name", "The Navn field is required.");
+            var model = new TodoViewModel();
+            // Act
+            var result = await controller.Create(model);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.False(viewResult.ViewData.ModelState.IsValid);
+        }
+
+        [Fact]
+        public async Task TodoController_Create_Schould_ReturnsRedirect_WhenModelStateIsValid()
+        {
+            // Arrange
+            var mockRepo = new Mock<ITodoRepository>();
+            mockRepo.Setup(repo => repo.GetAllAsync()).ReturnsAsync(_toDoTestDouble);
+            var controller = new TodoController(mockRepo.Object);
+            var model = new TodoViewModel
+            {
+                Id = 1,
+                Name = "ToDo 1",
+                Description = "ToDo 1 description",
+                CreatedDateTime = new DateTime()
+            };
+
+            // Act
+            var result = await controller.Create(model);
+
+            // Assert
+            var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Index", redirectToActionResult.ActionName);
+            mockRepo.Verify();
         }
     }
 }
